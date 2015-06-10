@@ -310,6 +310,33 @@ struct tpm_res_getcap_perm_flags {
 } PACKED;
 
 
+struct tpm_req_getcap_stclear_flags {
+    TPM_REQ_HEADER
+    u32    capArea;
+    u32    subCapSize;
+    u32    subCap;
+} PACKED;
+
+
+struct tpm_stclear_flags {
+    u16    tag;
+    u8     flags[5];
+} PACKED;
+
+#define STCLEAR_FLAG_IDX_DEACTIVATED 0
+#define STCLEAR_FLAG_IDX_DISABLE_FORCE_CLEAR 1
+#define STCLEAR_FLAG_IDX_PHYSICAL_PRESENCE 2
+#define STCLEAR_FLAG_IDX_PHYSICAL_PRESENCE_LOCK 3
+#define STCLEAR_FLAG_IDX_GLOBAL_LOCK 4
+
+
+struct tpm_res_getcap_stclear_flags {
+    TPM_RSP_HEADER
+    u32    size;
+    struct tpm_stclear_flags stclear_flags;
+} PACKED;
+
+
 struct tpm_res_getcap_ownerauth {
     TPM_RSP_HEADER
     u32    size;
@@ -361,6 +388,24 @@ enum ipltype {
 };
 
 
+#define TPM_STATE_ENABLED 1
+#define TPM_STATE_ACTIVE 2
+#define TPM_STATE_OWNED 4
+#define TPM_STATE_OWNERINSTALL 8
+
+/*
+ * physical presence interface
+ */
+
+#define TPM_PPI_OP_NOOP 0
+#define TPM_PPI_OP_ENABLE 1
+#define TPM_PPI_OP_DISABLE 2
+#define TPM_PPI_OP_ACTIVATE 3
+#define TPM_PPI_OP_DEACTIVATE 4
+#define TPM_PPI_OP_CLEAR 5
+#define TPM_PPI_OP_SET_OWNERINSTALL_TRUE 8
+#define TPM_PPI_OP_SET_OWNERINSTALL_FALSE 9
+
 struct bregs;
 void tpm_interrupt_handler32(struct bregs *regs);
 
@@ -371,5 +416,7 @@ u32 tpm_add_bcv(u32 bootdrv, const u8 *addr, u32 length);
 u32 tpm_add_cdrom(u32 bootdrv, const u8 *addr, u32 length);
 u32 tpm_add_cdrom_catalog(const u8 *addr, u32 length);
 u32 tpm_option_rom(const void *addr, u32 len);
+int tpm_is_detected(void);
+void tpm_menu(void);
 
 #endif /* TCGBIOS_H */

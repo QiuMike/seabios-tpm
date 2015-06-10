@@ -427,7 +427,7 @@ get_raw_keystroke(void)
 }
 
 // Read a keystroke - waiting up to 'msec' milliseconds.
-static int
+int
 get_keystroke(int msec)
 {
     u32 end = irqtimer_calc(msec);
@@ -461,7 +461,7 @@ interactive_bootmenu(void)
 
     char *bootmsg = romfile_loadfile("etc/boot-menu-message", NULL);
     int menukey = romfile_loadint("etc/boot-menu-key", 1);
-    printf("%s", bootmsg ?: "\nPress ESC for boot menu.\n\n");
+    printf("%s", bootmsg ?: "\nPress ESC for boot menu.\n");
     free(bootmsg);
 
     u32 menutime = romfile_loadint("etc/boot-menu-wait", DEFAULT_BOOTMENU_WAIT);
@@ -474,6 +474,7 @@ interactive_bootmenu(void)
     while (get_keystroke(0) >= 0)
         ;
 
+show_boot_menu:
     printf("Select boot device:\n\n");
     wait_threads();
 
@@ -486,6 +487,9 @@ interactive_bootmenu(void)
         printf("%d. %s\n", maxmenu
                , strtcpy(desc, pos->description, ARRAY_SIZE(desc)));
     }
+    if (tpm_is_detected()) {
+        printf("\nt. TPM Configuration\n");
+    }
 
     // Get key press.  If the menu key is ESC, do not restart boot unless
     // 1.5 seconds have passed.  Otherwise users (trained by years of
@@ -496,6 +500,12 @@ interactive_bootmenu(void)
         scan_code = get_keystroke(1000);
         if (scan_code == 1 && !irqtimer_check(esc_accepted_time))
             continue;
+        if (tpm_is_detected() && scan_code == 20 /* t */) {
+            printf("\n");
+            tpm_menu();
+            printf("\n");
+            goto show_boot_menu;
+        }
         if (scan_code >= 1 && scan_code <= maxmenu+1)
             break;
     }
